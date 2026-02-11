@@ -1,0 +1,6 @@
+[submodule "DriveXpand-Frontend"]
+	path = DriveXpand-Frontend
+	url = git@github.com:DriveXpand/DriveXpand-Frontend.git
+[submodule "DriveXpand-Backend"]
+	path = DriveXpand-Backend
+	url = git@github.com:DriveXpand/DriveXpand-Backend.git

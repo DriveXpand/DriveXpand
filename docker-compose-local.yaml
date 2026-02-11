@@ -1,0 +1,64 @@
+services:
+  # Local Database
+  db:
+    image: postgres:15-alpine
+    container_name: local_postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=drive-db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=localsecret
+    ports:
+      - "5433:5432"
+# Local App (Builds from source)
+  app:
+    image: eclipse-temurin:21-jdk-jammy
+    container_name: local_spring_boot
+    working_dir: /app
+    volumes:
+      - ./DriveXpand-Backend:/app
+      - ~/.m2:/root/.m2
+    command: /bin/sh -c "chmod +x mvnw && ./mvnw clean package -DskipTests && java -jar target/*.jar"
+    depends_on:
+      - db
+    environment:
+      # Use the service name 'db' instead of 'localhost'
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/drive-db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=localsecret
+
+      # Hibernate Settings
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - DEFAULT_SCHEMA=public
+
+      # API Key for testing
+      - API_KEY_VALUE=my-local-test-key
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_ORG_HIBERNATE=INFO
+      - LOGGING_LEVEL_ORG_HIBERNATE_SQL=INFO
+    ports:
+      - "8080:8080"
+  frontend:
+    image: node:25.4.0-alpine3.23
+    container_name: local_frontend
+    working_dir: /app
+    volumes:
+      - ./DriveXpand-Frontend:/app
+    command: /bin/sh -c "npm install && npm run dev"
+    ports:
+      - "8090:8080"
+
+  simulator:
+    image: obd-car-simulator-local
+    container_name: simulator
+    environment: 
+      - CAR_API_BASE="http://localhost:8000"
+      - BACKEND_URL="http://app:8080/api/telemetry")
+      - BACKEND_API_KEY=my-local-test-key
+    ports:
+      - "8000:8000"
+
+networks:
+  drive-network:
+    driver: bridge
