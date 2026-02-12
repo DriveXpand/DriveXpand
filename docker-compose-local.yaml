@@ -49,16 +49,6 @@ services:
     ports:
       - "8090:8080"
 
-  simulator:
-    image: obd-car-simulator-local
-    container_name: simulator
-    environment: 
-      - CAR_API_BASE="http://localhost:8000"
-      - BACKEND_URL="http://app:8080/api/telemetry")
-      - BACKEND_API_KEY=my-local-test-key
-    ports:
-      - "8000:8000"
-
 networks:
   drive-network:
     driver: bridge
