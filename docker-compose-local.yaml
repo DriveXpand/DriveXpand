@@ -39,6 +39,27 @@ services:
       - LOGGING_LEVEL_ORG_HIBERNATE_SQL=INFO
     ports:
       - "8080:8080"
+
+  populate-backend-default-device:
+    image: python:3.14-slim
+    container_name: populate_backend_default_device
+    depends_on:
+      - app
+    working_dir: /app
+    volumes:
+      - ./Populate-Backend:/app
+    command: >
+      sh -c "pip install httpx && 
+         python3 populate_backend.py" 
+    environment:
+      - START_DATE=2024-12-01
+      - END_DATE=2025-01-31
+      - TRIPS_PER_DAY=2
+      - PACKET_DURATION=60
+      - DEVICE_ID=default-device
+      - API_URL=http://app:8080/api/telemetry
+      - API_KEY=my-local-test-key
+
   frontend:
     image: node:25.4.0-alpine3.23
     container_name: local_frontend
