@@ -49,7 +49,7 @@ services:
     volumes:
       - ./Populate-Backend:/app
     command: >
-      sh -c "pip install httpx && 
+      sh -c "sleep 30 && pip install httpx && 
          python3 populate_backend.py" 
     environment:
       - START_DATE=2024-12-01
