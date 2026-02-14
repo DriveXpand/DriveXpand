@@ -6,11 +6,11 @@ from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
 # Date Range Configuration (YYYY-MM-DD)
-START_DATE_STR = os.getenv("START_DATE", "2024-12-01")
-END_DATE_STR = os.getenv("END_DATE", "2025-01-31")
+START_DATE_STR = os.getenv("START_DATE", "2025-07-01")
+END_DATE_STR = os.getenv("END_DATE", "2026-02-01")
 
 # Simulation Settings
-TRIPS_PER_DAY = int(os.getenv("TRIPS_PER_DAY", "2"))  # Avg trips per day
+TRIPS_PER_DAY = int(os.getenv("TRIPS_PER_DAY", "0"))  # Avg trips per day
 PACKET_DURATION = int(
     os.getenv("PACKET_DURATION", "60")
 )  # Duration of each trip (seconds)
@@ -106,9 +106,9 @@ async def main():
 
             # Determine how many trips to fake for this specific day
             # (Randomize it slightly so it doesn't look robotic)
-            num_trips = random.randint(TRIPS_PER_DAY - 1, TRIPS_PER_DAY + 2)
+            num_trips = random.randint(TRIPS_PER_DAY - 2, TRIPS_PER_DAY + 2)
             if num_trips < 1:
-                num_trips = 1
+                num_trips = 0
 
             print(f"📅 Processing {current_day.date()} ({num_trips} trips)...")
 
