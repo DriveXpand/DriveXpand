@@ -32,6 +32,13 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - DEFAULT_SCHEMA=public
 
+      # USER
+      - USERNAME=test
+      # Use $$ to escape $
+      - PASSWORD=$$2a$$10$$tnZv1cdTwsYNdW1Rf4DBYOJbBr/Woru0VaaRBbESy94IXf4anvxH6
+      # - PASSWORD=test
+      - SECRET_JWT=sWmbmPtNIc9QjkX5B1V9KjT8m14Q1Gaqr5q+8SfxumM=
+
       # API Key for testing
       - API_KEY_VALUE=my-local-test-key
       - LOGGING_LEVEL_ROOT=INFO
