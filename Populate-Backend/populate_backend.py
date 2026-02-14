@@ -22,6 +22,16 @@ API_KEY = os.getenv("API_KEY", "my-local-test-key")
 EPOCH_START_DT = datetime(2000, 1, 1)
 EPOCH_START_TS = EPOCH_START_DT.timestamp()
 
+# --- LOGGING THE CONFIGURATION ---
+print("="*40)
+print("🚀 INITIALIZING TELEMETRY SIMULATION")
+print("="*40)
+
+print(f"📅 Date Range:      {START_DATE_STR} to {END_DATE_STR}")
+print(f"🚗 Trips Per Day:   {TRIPS_PER_DAY}")
+print(f"⏱️  Packet Duration: {PACKET_DURATION}s")
+print(f"🆔 Device ID:       {DEVICE_ID}")
+print(f"🌐 API URL:         {API_URL}")
 
 def to_custom_timestamp(dt_object):
     """Converts a standard datetime object to your custom 2000-epoch timestamp."""

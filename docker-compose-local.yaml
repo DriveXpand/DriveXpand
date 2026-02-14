@@ -60,6 +60,26 @@ services:
       - API_URL=http://app:8080/api/telemetry
       - API_KEY=my-local-test-key
 
+  populate-backend-2nd-device:
+    image: python:3.14-slim
+    container_name: populate_backend_second_device
+    depends_on:
+      - app
+    working_dir: /app
+    volumes:
+      - ./Populate-Backend:/app
+    command: >
+      sh -c "sleep 30 && pip install httpx && 
+         python3 populate_backend.py" 
+    environment:
+      - START_DATE=2024-12-01
+      - END_DATE=2026-02-10
+      - TRIPS_PER_DAY=0
+      - PACKET_DURATION=60
+      - DEVICE_ID=2nd-device
+      - API_URL=http://app:8080/api/telemetry
+      - API_KEY=my-local-test-key
+
   frontend:
     image: node:25.4.0-alpine3.23
     container_name: local_frontend
