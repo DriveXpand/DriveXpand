@@ -33,6 +33,7 @@ services:
       - DEFAULT_SCHEMA=public
 
       # USER
+      - IS_PROD=false
       - USERNAME=test
       # Use $$ to escape $
       - PASSWORD=$$2a$$10$$tnZv1cdTwsYNdW1Rf4DBYOJbBr/Woru0VaaRBbESy94IXf4anvxH6
@@ -64,6 +65,7 @@ services:
       - TRIPS_PER_DAY=2
       - PACKET_DURATION=60
       - DEVICE_ID=default-device
+      - DEVICE_NAME=1st-device
       - API_URL=http://app:8080/api/telemetry
       - API_KEY=my-local-test-key
 
@@ -84,6 +86,7 @@ services:
       - TRIPS_PER_DAY=0
       - PACKET_DURATION=60
       - DEVICE_ID=2nd-device
+      - DEVICE_NAME=2nd-device
       - API_URL=http://app:8080/api/telemetry
       - API_KEY=my-local-test-key
 

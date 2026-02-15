@@ -10,45 +10,64 @@ START_DATE_STR = os.getenv("START_DATE", "2025-07-01")
 END_DATE_STR = os.getenv("END_DATE", "2026-02-01")
 
 # Simulation Settings
-TRIPS_PER_DAY = int(os.getenv("TRIPS_PER_DAY", "0"))  # Avg trips per day
-PACKET_DURATION = int(
-    os.getenv("PACKET_DURATION", "60")
-)  # Duration of each trip (seconds)
+TRIPS_PER_DAY = int(os.getenv("TRIPS_PER_DAY", "2"))
+PACKET_DURATION = int(os.getenv("PACKET_DURATION", "60"))
+
 DEVICE_ID = os.getenv("DEVICE_ID", "default-device")
+DEVICE_NAME = os.getenv("DEVICE_NAME", "Simulated Truck 01")
+
+# API Configuration
 API_URL = os.getenv("API_URL", "http://localhost:8080/api/telemetry")
 API_KEY = os.getenv("API_KEY", "my-local-test-key")
 
-# Custom Epoch (Jan 1, 2000) - as used in your system
+# Derive Base URL
+BASE_URL = API_URL.replace("/api/telemetry", "")
+
+# Custom Epoch (Jan 1, 2000)
 EPOCH_START_DT = datetime(2000, 1, 1)
 EPOCH_START_TS = EPOCH_START_DT.timestamp()
 
-# --- LOGGING THE CONFIGURATION ---
-print("="*40)
-print("🚀 INITIALIZING TELEMETRY SIMULATION")
-print("="*40)
+# Locations Pool
+LOCATIONS = [
+    "Berlin",
+    "Hamburg",
+    "Munich",
+    "Cologne",
+    "Frankfurt",
+    "Paris",
+    "Lyon",
+    "Marseille",
+    "London",
+    "Manchester",
+    "Birmingham",
+    "Amsterdam",
+    "Rotterdam",
+    "Warsaw",
+    "Krakow",
+    "Prague",
+    "Vienna",
+]
 
-print(f"📅 Date Range:      {START_DATE_STR} to {END_DATE_STR}")
-print(f"🚗 Trips Per Day:   {TRIPS_PER_DAY}")
-print(f"⏱️  Packet Duration: {PACKET_DURATION}s")
-print(f"🆔 Device ID:       {DEVICE_ID}")
-print(f"🌐 API URL:         {API_URL}")
+# --- LOGGING ---
+print("=" * 40)
+print("🚀 INITIALIZING TELEMETRY SIMULATION")
+print("=" * 40)
+print(f"📅 Date Range:       {START_DATE_STR} to {END_DATE_STR}")
+print(f"🆔 Device ID:        {DEVICE_ID}")
+print(f"🏷️  Device Name:      {DEVICE_NAME}")
+print(f"🌐 API URL:          {API_URL}")
+
 
 def to_custom_timestamp(dt_object):
-    """Converts a standard datetime object to your custom 2000-epoch timestamp."""
     return int(dt_object.timestamp() - EPOCH_START_TS)
 
 
 def generate_packet(start_dt):
-    """
-    Generates a packet starting at a specific datetime object.
-    """
     start_time_custom = to_custom_timestamp(start_dt)
     end_time_custom = start_time_custom + PACKET_DURATION
 
     timed_data = {}
     aggregated_distance = 0.0
-
-    # Randomize start conditions slightly
     current_speed = random.randint(0, 40)
     current_rpm = 1000
     current_temp = 80.0 + random.uniform(-5, 5)
@@ -56,25 +75,18 @@ def generate_packet(start_dt):
     for i in range(PACKET_DURATION):
         tick_time = str(start_time_custom + i)
 
-        # 1. Physics Logic (Accelerate/Cruise/Decelerate)
-        if i < 15:  # Accelerate
+        if i < 15:
             current_speed += random.uniform(1, 3)
-        elif i > (PACKET_DURATION - 15):  # Decelerate
+        elif i > (PACKET_DURATION - 15):
             current_speed -= random.uniform(1, 3)
-        else:  # Cruise
+        else:
             current_speed += random.uniform(-2, 2)
 
-        # Constraints
         current_speed = max(0, min(180, current_speed))
         current_rpm = 800 + (current_speed * 45) + random.randint(-50, 50)
-
-        # 2. Distance aggregation (m/s)
         aggregated_distance += current_speed / 3.6
 
-        # 3. Create Data Entry
         entry = {"speed": int(current_speed), "rpm": int(current_rpm)}
-
-        # Temp updates every 10 ticks
         if i % 10 == 0:
             current_temp += random.uniform(-0.2, 0.3)
             entry["temp"] = round(current_temp, 1)
@@ -90,18 +102,52 @@ def generate_packet(start_dt):
     }
 
 
+async def update_device_name(client, headers):
+    """Updates the friendly name of the device."""
+    url = f"{BASE_URL}/api/devices/{DEVICE_ID}/name"
+    try:
+        # We send the string wrapped in JSON quotes (standard for 'type: string')
+        resp = await client.put(url, json=DEVICE_NAME, headers=headers)
+
+        if resp.status_code == 200:
+            print(f"   ✅ Device Name set to: {DEVICE_NAME}")
+            return True
+        else:
+            print(f"   ⚠️ Name Update Failed: {resp.status_code} - {resp.text}")
+            return False
+    except Exception as e:
+        print(f"   ⚠️ Error updating device name: {e}")
+        return False
+
+
+async def patch_trip_locations(client, trip_id, headers):
+    """Patches the trip with start and end locations."""
+    url = f"{BASE_URL}/api/trips/{trip_id}"
+
+    start_loc = random.choice(LOCATIONS)
+    end_loc = random.choice(LOCATIONS)
+    while end_loc == start_loc:
+        end_loc = random.choice(LOCATIONS)
+
+    payload = {"startLocation": start_loc, "endLocation": end_loc}
+
+    try:
+        resp = await client.patch(url, json=payload, headers=headers)
+        if resp.status_code == 200:
+            # Optional: print less spam
+            # print(f"   📍 Trip patched: {start_loc} -> {end_loc}")
+            pass
+        else:
+            print(f"   ⚠️ Trip Patch Failed: {resp.status_code}")
+    except Exception as e:
+        print(f"   ⚠️ Error patching trip: {e}")
+
+
 async def main():
-    # Parse dates
     start_date = datetime.strptime(START_DATE_STR, "%Y-%m-%d")
     end_date = datetime.strptime(END_DATE_STR, "%Y-%m-%d")
-
-    # Calculate total days
     delta = end_date - start_date
     total_days = delta.days + 1
-
-    print(f"--- Generating Data ---")
-    print(f"Range: {START_DATE_STR} to {END_DATE_STR} ({total_days} days)")
-    print(f"Device: {DEVICE_ID} | Target: {API_URL}")
 
     headers = {
         "X-API-KEY": API_KEY,
@@ -109,39 +155,54 @@ async def main():
         "Content-Type": "application/json",
     }
 
+    # Flag to track if we have named the device yet
+    has_named_device = False
+
     async with httpx.AsyncClient() as client:
-        # Loop through every day in the range
+        print(f"--- Generating Telemetry Data ---")
+
         for day_offset in range(total_days):
             current_day = start_date + timedelta(days=day_offset)
-
-            # Determine how many trips to fake for this specific day
-            # (Randomize it slightly so it doesn't look robotic)
-            num_trips = random.randint(TRIPS_PER_DAY - 2, TRIPS_PER_DAY + 2)
-            if num_trips < 1:
+            num_trips = random.randint(TRIPS_PER_DAY - 1, TRIPS_PER_DAY + 1)
+            if num_trips < 0:
                 num_trips = 0
 
             print(f"📅 Processing {current_day.date()} ({num_trips} trips)...")
 
             for _ in range(num_trips):
-                # Pick a random time of day (e.g., between 06:00 and 22:00)
                 hour = random.randint(6, 22)
                 minute = random.randint(0, 59)
                 trip_start_time = current_day.replace(
                     hour=hour, minute=minute, second=0
                 )
 
-                # Generate Payload
+                # 1. Generate Payload
                 payload = generate_packet(trip_start_time)
 
-                # Send
+                # 2. Send Telemetry (This creates the device if it doesn't exist)
                 try:
                     response = await client.post(API_URL, json=payload, headers=headers)
-                    if response.status_code not in [200, 201]:
-                        print(f"   ❌ Failed: {response.status_code}")
+
+                    if response.status_code in [200, 201]:
+                        # 3. NOW that the device exists, name it (only once)
+                        if not has_named_device:
+                            success = await update_device_name(client, headers)
+                            if success:
+                                has_named_device = True
+
+                        # 4. Extract Trip ID and Patch Location
+                        data = response.json()
+                        trip_id = data.get("tripId")
+
+                        if trip_id:
+                            await patch_trip_locations(client, trip_id, headers)
+                        else:
+                            print("   ⚠️ No tripId returned.")
+                    else:
+                        print(f"   ❌ Telemetry Failed: {response.status_code}")
                 except Exception as e:
                     print(f"   ⚠️ Error: {e}")
 
-                # Tiny pause
                 await asyncio.sleep(0.01)
 
     print("--- Done ---")
