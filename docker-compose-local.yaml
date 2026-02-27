@@ -3,7 +3,6 @@ services:
   db:
     image: postgres:15-alpine
     container_name: local_postgres
-    restart: always
     environment:
       - POSTGRES_DB=drive-db
       - POSTGRES_USER=admin
